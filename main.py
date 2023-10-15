@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from clients_aws.dynamo_client import DynamoClient
+from clients_aws.s3_client import S3Client
 import requests
 
 app = Flask(__name__)
@@ -46,21 +47,30 @@ def upload_and_request():
 
     response = requests.post(csv2rdf_request_url, files=files, data=data)
 
-    salva_status_dynamo(id_execucao, "PROCESSADO")
-
     if response.status_code == 200:
+        salva_status_dynamo(id_execucao, "PROCESSADO")
 
-        with open("teste.ntriples", 'w', encoding='utf-8') as file:
+        file_name = f"RDF_{id_execucao}.ntriples"
+
+        with open(file_name, 'w', encoding='utf-8') as file:
             file.write(response.text)
 
-        return "ok", 200
+        salva_rdf_s3(file_name)
+
+        return "Arquivo convertido e salvo", 200
     else:
-        return 'Erro na requisição para a outra API', 500
+        salva_status_dynamo(id_execucao, "ERRO AO PROCESSAR")
+        return 'Erro ao converter CSV para RDF', 500
 
 
 def salva_status_dynamo(id_execucao, status):
     dynamo = DynamoClient()
     dynamo.insert_control_data(id_execucao, status)
+
+
+def salva_rdf_s3(filename):
+    s3 = S3Client()
+    s3.save_rdf_to_bucket(filename)
 
 
 if __name__ == '__main__':
