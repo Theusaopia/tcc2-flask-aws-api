@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
+from clients_aws.dynamo_client import DynamoClient
 import requests
-import json
 
 app = Flask(__name__)
 
@@ -24,8 +24,10 @@ def upload_and_request():
     rdf_format = request.form['rdfFormat']
     rdf_encode = request.form['rdfEncode']
     ontology_format = request.form['ontologyFormat']
+    id_execucao = request.form['id-exec']
 
     csv2rdf_request_url = 'http://localhost:8080/converte'
+
     files = {
         'csv-file': (csv_file.filename, csv_file.read()),
         'mapping-file': (mapping_file.filename, mapping_file.read()),
@@ -40,7 +42,11 @@ def upload_and_request():
         'ontologyFormat': ontology_format
     }
 
+    salva_status_dynamo(id_execucao, "EM PROCESSAMENTO")
+
     response = requests.post(csv2rdf_request_url, files=files, data=data)
+
+    salva_status_dynamo(id_execucao, "PROCESSADO")
 
     if response.status_code == 200:
 
@@ -50,6 +56,11 @@ def upload_and_request():
         return "ok", 200
     else:
         return 'Erro na requisição para a outra API', 500
+
+
+def salva_status_dynamo(id_execucao, status):
+    dynamo = DynamoClient()
+    dynamo.insert_control_data(id_execucao, status)
 
 
 if __name__ == '__main__':

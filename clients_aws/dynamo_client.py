@@ -9,7 +9,7 @@ class DynamoClient():
                                    region_name='sa-east-1',
                                    aws_access_key_id=AWS_ACCESS_KEY_ID,
                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-        self.table_name = 'controle_processamento'
+        self.table_name = 'controle-processamento'
 
     def insert_control_data(self, id_execucao, status):
         self.client.put_item(
