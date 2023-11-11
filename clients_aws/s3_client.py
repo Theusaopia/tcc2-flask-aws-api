@@ -12,6 +12,13 @@ class S3Client():
         self.bucket_name = 'bucket-rdf'
         self.folder = 'files/'
 
-    def save_rdf_to_bucket(self, filename):
+    def save_rdf_to_bucket(self, id_exec, rdf_file, ontology_file, mapping_file):
+        folder = f"{self.folder}{id_exec}/"
         self.client.upload_file(
-            filename, self.bucket_name, self.folder + filename)
+            rdf_file, self.bucket_name, folder + rdf_file)
+
+        self.client.upload_file(
+            ontology_file, self.bucket_name, folder + ontology_file)
+
+        self.client.upload_file(
+            mapping_file, self.bucket_name, folder + mapping_file)

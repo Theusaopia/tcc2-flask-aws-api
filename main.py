@@ -52,12 +52,20 @@ def upload_and_request():
     if response.status_code == 200:
         salva_status_dynamo(id_execucao, "PROCESSADO")
 
-        file_name = f"RDF_{id_execucao}.ntriples"
+        rdf_file = f"RDF_{id_execucao}.ntriples"
+        onto_file = "ontology.owl"
+        mapping = "mapping.jsonld"
 
-        with open(file_name, 'w', encoding='utf-8') as file:
+        with open(rdf_file, 'w', encoding='utf-8') as file:
             file.write(response.text)
 
-        salva_rdf_s3(file_name)
+        with open(onto_file, 'wb') as file:
+            file.write(files['ontology-file'][1])
+
+        with open(mapping, 'wb') as file:
+            file.write(files['mapping-file'][1])
+
+        salva_rdf_s3(id_execucao, rdf_file, onto_file, mapping)
 
         return "Arquivo convertido e salvo", 200
     else:
@@ -70,9 +78,9 @@ def salva_status_dynamo(id_execucao, status):
     dynamo.insert_control_data(id_execucao, status)
 
 
-def salva_rdf_s3(filename):
+def salva_rdf_s3(id_exec, rdf_file, ontology_file, mapping_file):
     s3 = S3Client()
-    s3.save_rdf_to_bucket(filename)
+    s3.save_rdf_to_bucket(id_exec, rdf_file, ontology_file, mapping_file)
 
 
 if __name__ == '__main__':
