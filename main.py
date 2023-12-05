@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from clients_aws.dynamo_client import DynamoClient
 from clients_aws.s3_client import S3Client
+from clients_aws.stepfunction_client import StepFunctionClient
 import requests
 
 app = Flask(__name__)
@@ -66,6 +67,7 @@ def upload_and_request():
             file.write(files['mapping-file'][1])
 
         salva_rdf_s3(id_execucao, rdf_file, onto_file, mapping)
+        inicia_step_function(id_execucao)
 
         return "Arquivo convertido e salvo", 200
     else:
@@ -81,6 +83,11 @@ def salva_status_dynamo(id_execucao, status):
 def salva_rdf_s3(id_exec, rdf_file, ontology_file, mapping_file):
     s3 = S3Client()
     s3.save_rdf_to_bucket(id_exec, rdf_file, ontology_file, mapping_file)
+
+
+def inicia_step_function(id_exec):
+    stepfunction = StepFunctionClient()
+    stepfunction.start_step_function(id_exec)
 
 
 if __name__ == '__main__':
