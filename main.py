@@ -67,9 +67,9 @@ def upload_and_request():
             file.write(files['mapping-file'][1])
 
         salva_rdf_s3(id_execucao, rdf_file, onto_file, mapping)
-        inicia_step_function(id_execucao)
+        url = inicia_step_function(id_execucao)
 
-        return "Arquivo convertido e salvo", 200
+        return "url: " + url, 200
     else:
         salva_status_dynamo(id_execucao, "ERRO AO PROCESSAR")
         return 'Erro ao converter CSV para RDF', 500
@@ -87,7 +87,8 @@ def salva_rdf_s3(id_exec, rdf_file, ontology_file, mapping_file):
 
 def inicia_step_function(id_exec):
     stepfunction = StepFunctionClient()
-    stepfunction.start_step_function(id_exec)
+    url = stepfunction.start_step_function(id_exec)
+    return url
 
 
 if __name__ == '__main__':

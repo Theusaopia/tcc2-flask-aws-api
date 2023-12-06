@@ -1,4 +1,6 @@
 import boto3
+import time
+import json
 from utils.constant import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 
@@ -14,10 +16,36 @@ class StepFunctionClient():
         input_data = '{"id_exec": "' + id_exec + '"}'
         state_machine_arn = 'arn:aws:states:sa-east-1:745684883488:stateMachine:fluxo-inicia-instancia'
 
-        response = self.client.start_execution(
+        start = self.client.start_execution(
             stateMachineArn=state_machine_arn,
             name=id_exec,
             input=input_data
         )
 
-        return response['executionArn']
+        execution_arn = start['executionArn']
+
+        while True:
+            response = self.client.describe_execution(
+                executionArn=execution_arn
+            )
+            status = response['status']
+
+            if status == 'SUCCEEDED':
+                break
+            elif status in ['FAILED', 'TIMED_OUT', 'ABORTED']:
+                print(f"A execução falhou ou foi interrompida: {status}")
+                break
+
+            time.sleep(5)
+
+        response = self.client.describe_execution(
+            executionArn=execution_arn
+        )
+        output = response.get('output', '')
+        output = output.replace('\\', '')
+        output = output.replace('""', '"')
+        output = json.loads(output)
+
+        complete_url = output['body']
+
+        return complete_url
